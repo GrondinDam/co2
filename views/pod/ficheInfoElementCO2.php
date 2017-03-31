@@ -511,9 +511,7 @@
 			<?php //} ?>
 		</ul>
 		
-		<button id="exportCSV" class="btn btn-default letter-blue margin-top-5">
-		Exporter en format CSV
-		</button>
+		<button id="exportCSV" class="btn btn-default letter-blue margin-top-5">Exporter en format CSV</button>
 
 		<ul id="accordion2" class="accordion shadow2 margin-top-20">
 		
@@ -955,62 +953,22 @@
 			bindLBHLinks();
 		});
 		$("#exportCSV").click(function(){
-			// alert("Clic sur le bouton d'export CSV");
-
-			var id = contextData.id;
-			var type = contextData.type;
-
-			// alert(id);
-			// alert(type);
-
+			var param = { 
+				id : contextData.id ,
+				type : contextData.type 
+			};
 			$.ajax({
-		        type: "GET",
-		       	url : baseUrl+'/'+moduleId+'/export',
-		        data: 'id='+id+'&type='+type,
+		        type: "POST",
+		       	url : baseUrl+'/'+moduleId+'/export/index',
+		        data: param,
 		    	success: function(data){
-
-		    		res = JSON.parse(data);
-		    		head = "";
-		    		ligne_type = "";
-		    		ligne_isAdmin = "";
-
-		    		$.each(res, function( key, value ) {
-
-		    			head += '";"'+key;
-		    			ligne_type += '";"'+value.type;
-		    			ligne_isAdmin += '";"'+value.isAdmin;
-
-					});
-
-					// alert(head.length);
-					// alert(ligne_type.length);
-					// alert(ligne_isAdmin.length);
-
-					head = head.substring(2, (head.length));
-					ligne_type = ligne_type.substring(2, (ligne_type.length));
-					ligne_isAdmin = ligne_isAdmin.substring(2, (ligne_isAdmin.length));
-
-		    		csv =  head+'"';
-		    		csv += "\n";
-		    		csv +=ligne_type+'"';
-		    		csv += "\n";
-		    		csv +=ligne_isAdmin+'"';
-
-		    		// alert(csv);
-
 		    		$("<a />", {
 					  "download": "Element.csv",
-					  "href" : "data:application/csv," + encodeURIComponent(csv)
+					  "href" : "data:application/csv," + encodeURIComponent(data)
 					}).appendTo("body")
 					.click(function() {
 					   $(this).remove()
-					})[0].click() ;
-
-					// head = '";"';
-					// ligne_type = '";"';
-					// ligne_isAdmin = '";"';
-
-					
+					})[0].click() ;					
 			    }
 			});
 		});
