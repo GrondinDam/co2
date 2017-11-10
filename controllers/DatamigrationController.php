@@ -2485,6 +2485,39 @@ if( Role::isSuperAdmin(Role::getRolesUserId(Yii::app()->session["userId"]) )){
 		echo  "NB Element mis à jours: " .$nbelement."<br>" ;
 	}
 
+	public function actionBatchInterRemoveGeoShapeZone() {
+		ini_set('memory_limit', '-1');
+		$zones = PHDB::find(Zone::COLLECTION, array("geoShape" => array('$exists' => 1) ));
+		$nbelement = 0 ;
+		foreach ($zones as $key => $zone) {
+			$res = PHDB::update( Zone::COLLECTION, 
+								  	array("_id"=>new MongoId($key)),
+									array('$unset' => array("geoShape" =>  ""))
+					);
+			$nbelement++;
+						
+		}
+		echo  "NB Element mis à jours: " .$nbelement."<br>" ;
+	}
+
+	public function actionBatchInterCountry() {
+		ini_set('memory_limit', '-1');
+		$where = array(	"level" => "1");
+		$zones = PHDB::find(Zone::COLLECTION, $where);
+		$nbelement = 0 ;
+		foreach ($zones as $key => $zone) {
+			$city = PHDB::findOne(City::COLLECTION, array("country" => $zone["countryCode"]));
+
+			if(!empty($city)){
+				$res = PHDB::update( Zone::COLLECTION, 
+								  	array("_id"=>new MongoId($key)),
+									array('$set' => array("ownACity" =>  true))
+					);
+				$nbelement++;
+			}			
+		}
+		echo  "NB Element mis à jours: " .$nbelement."<br>" ;
+	}
 
 	public function actionBatchZoneUnsetKey(){
 		ini_set('memory_limit', '-1');
@@ -2524,6 +2557,64 @@ if( Role::isSuperAdmin(Role::getRolesUserId(Yii::app()->session["userId"]) )){
 		echo  "NB Element mis à jours: " .$nbelement."<br>" ;
 	}
 
+
+	public function actionBatchTranslateMissing(){
+		ini_set('memory_limit', '-1');
+		$nbelement = 0 ;
+		
+		$cities = PHDB::find(City::COLLECTION, array("translateId" => array('$exists' => 0) ));
+		if(!empty($cities)){
+			foreach (@$cities as $keyElt => $city) {
+				Zone::insertTranslate(	( String ) $city["_id"], City::COLLECTION, $city["country"], $city["name"], 
+										(!empty($city["osmID"]) ? $city["osmID"] : null ), 
+										(!empty($city["wikidataID"]) ? $city["wikidataID"] : null ) ) ;
+				$nbelement++;
+			}	
+		}
+		echo  "NB City mis à jours: " .$nbelement."<br>" ;
+
+		$nbelement = 0 ;
+		
+		$zones = PHDB::find(Zone::COLLECTION, array("translateId" => array('$exists' => 0) ));
+		if(!empty($zones)){
+			foreach (@$zones as $keyElt => $zone) {
+				Zone::insertTranslate(	( String ) $zone["_id"], Zone::COLLECTION, $zone["countryCode"], $zone["name"], 
+										(!empty($zone["osmID"]) ? $zone["osmID"] : null ), 
+										(!empty($zone["wikidataID"]) ? $zone["wikidataID"] : null ) ) ;
+				$nbelement++;
+			}
+		}
+		echo  "NB Zones mis à jours: " .$nbelement."<br>" ;
+	}
+
+	public function actionBatchInterElementCorrection() {
+		//if( Role::isSuperAdmin(Role::getRolesUserId(Yii::app()->session["userId"]) )){
+			$nbelement = 0 ;
+			$types = array(Person::COLLECTION , Organization::COLLECTION, Project::COLLECTION, 
+							Event::COLLECTION, Poi::COLLECTION);
+
+			foreach ($types as $keyType => $type) {
+				$elts = PHDB::find($type, array('$and' => array(
+									array("address" => array('$exists' => 1)),
+									array("address.localityId" => array('$exists' => 1)),
+									array("address.level1" => array('$exists' => 0))
+						)));
+
+				foreach ($elts as $key => $elt) {
+					$newAddress = $elt["address"];
+					unset($newAddress["localityId"]);
+					$res = PHDB::update($type, 
+							array("_id"=>new MongoId($key)),
+							array('$set' => array("address" => $newAddress))
+					);
+					$nbelement++;
+				}
+			}
+			echo  "NB Element mis à jours: " .$nbelement."<br>" ;
+			
+		//}
+	}
+
 	public function actionBatchInterElement() {
 		//if( Role::isSuperAdmin(Role::getRolesUserId(Yii::app()->session["userId"]) )){
 			$nbelement = 0 ;
@@ -2532,15 +2623,35 @@ if( Role::isSuperAdmin(Role::getRolesUserId(Yii::app()->session["userId"]) )){
 
 			foreach ($types as $keyType => $type) {
 				$elts = PHDB::find($type, array('$and' => array(
-									array("address" => array('$exists' => 1)))
-						));
+									array("address" => array('$exists' => 1)),
+									array("address.localityId" => array('$exists' => 0))
+						)));
 
 				foreach ($elts as $key => $elt) {
-					if(!empty($elt["address"]["codeInsee"])){
-						$city = PHDB::findOne(City::COLLECTION, array("insee" => $elt["address"]["codeInsee"]));
+					if(!empty($elt["address"]["codeInsee"]) || !empty($elt["address"]["postalCode"])){
 
+						if( !empty($elt["address"]["codeInsee"]) )
+							$city = PHDB::findOne(City::COLLECTION, array("insee" => $elt["address"]["codeInsee"]));
+						else
+							$city = PHDB::findOne(City::COLLECTION, array("postalCodes.postalCode" => $elt["address"]["postalCode"]));
+						//var_dump($city);
 						if(!empty($city)){
 							$newAddress = $elt["address"];
+
+							if(empty($elt["address"]["codeInsee"])){
+								$newAddress["codeInsee"] = $city["insee"];
+								$newAddress["addressCountry"] = $city["country"];
+								$newAddress["streetAddress"] = "";
+								if(!empty($city["postalCodes"]))
+									foreach ($city["postalCodes"] as $keycp => $valuecp) {
+										if($valuecp["postalCode"] == $elt["address"]["postalCode"])
+											$newAddress["addressLocality"] = $valuecp["name"];
+									}
+
+								if(!empty($newAddress["addressLocality"]))
+									$newAddress["addressLocality"] = $city["name"];
+							}
+
 							if(!empty($city["level1"])){
 								$newAddress["level1"] = $city["level1"];
 								$newAddress["level1Name"] = $city["level1Name"];
@@ -2613,15 +2724,20 @@ if( Role::isSuperAdmin(Role::getRolesUserId(Yii::app()->session["userId"]) )){
 								if(!empty($newAdd))
 									$set["addresses"] = $newAdd;
 							}
-
-							$res = PHDB::update($type, 
-									array("_id"=>new MongoId($key)),
-									array('$set' => $set)
-							);
+							if(!empty($newAddress['localityId'])){
+								$res = PHDB::update($type, 
+										array("_id"=>new MongoId($key)),
+										array('$set' => $set)
+								);
+							}
 							$nbelement++;
 						}
 					}else{
-						echo  "Error address: ".$elt["name"]." " . $type. " " . $key. "<br>" ;
+						$res = PHDB::update($type, 
+									array("_id"=>new MongoId($key)),
+									array('$unset' => array("address" => ""))
+							);
+						$nbelement++;
 					}					
 				}
 			}
@@ -2654,7 +2770,14 @@ if( Role::isSuperAdmin(Role::getRolesUserId(Yii::app()->session["userId"]) )){
 
 	public function actionBatchInterNews() {
 		ini_set('memory_limit', '-1');
-		$news = PHDB::find(News::COLLECTION, array("scope" => array('$exists' => 1)));
+		//$news = PHDB::find(News::COLLECTION, array("scope" => array('$exists' => 1)));
+
+		$news = PHDB::find(News::COLLECTION, array('$and' => array(
+									array("scope" => array('$exists' => 1)),
+									array("scope.localities" => array('$exists' => 0)))
+						));
+
+
 		$nbelement = 0 ;
 		foreach ($news as $key => $new) {
 			if(!empty($new["scope"])){
@@ -2738,7 +2861,7 @@ if( Role::isSuperAdmin(Role::getRolesUserId(Yii::app()->session["userId"]) )){
 						}
 					}
 				}
-				$newscope = array("type" => $new["type"], "localities" => $listKey);
+				$newscope = array("type" => $new["scope"]["type"], "localities" => $listKey);
 				$set = array("scope" => $newscope);
 				$res = PHDB::update(News::COLLECTION, 
 						array("_id"=>new MongoId($key)),
@@ -2936,7 +3059,7 @@ if( Role::isSuperAdmin(Role::getRolesUserId(Yii::app()->session["userId"]) )){
 					}
 				}
 
-				if(!empty($zone["wikidataID"]) && empty($translate)){
+				if(!empty($zone["wikidataID"])){
 
 					$zoneWiki =  json_decode(file_get_contents("https://www.wikidata.org/wiki/Special:EntityData/".$zone["wikidataID"].".json"), true);
 					

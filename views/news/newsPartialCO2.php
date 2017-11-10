@@ -83,7 +83,7 @@ foreach($news as $key => $media){
 <?php if(@$isFirst == true && sizeof($news)==0){ ?>
     <li id='noMoreNews' class='text-left padding-15'>
       <i class='fa fa-ban'></i>
-      Aucune actualité
+      <?php echo Yii::t("common", "No news in this timeline") ?>
     </li>
 <?php }else if(sizeof($news)==0 && @$actionController != "save"){
     echo "<li id='noMoreNews' class='text-left'><i class='fa fa-ban'></i> ".Yii::t("common", "No more news")."</li>";
@@ -156,7 +156,7 @@ foreach($news as $key => $media){
           textNews=checkAndCutLongString(v.text,500,v._id.$id,"showmorenews",true);
           //Check if @mentions return text with link
         if(typeof(v.mentions) != "undefined")
-          textNews = addMentionInText(textNews,v.mentions);
+          textNews = mentionsInit.addMentionInText(textNews,v.mentions);
         textHtml='<span class="timeline_text no-padding text-black" >'+linkify(textNews)+'</span>';
         $("#newsContent"+e).html(textHtml);
 

@@ -9,8 +9,7 @@ function bindCommunexionScopeEvents(){
         $(this).removeClass("inactive");
         mylog.log("globalscope-checker",  $(this).data("scope-name"), $(this).data("scope-type"));
         setGlobalScope( $(this).data("scope-value"), $(this).data("scope-name"), $(this).data("scope-type"), $(this).data("scope-level"),
-                         $(this).data("insee-communexion"), $(this).data("name-communexion"), $(this).data("cp-communexion"), 
-                         $(this).data("region-communexion"), $(this).data("country-communexion")) ;
+                         $(this).data("scope-values"),  $(this).data("scope-notsearch")) ;
     });
     
     $(".item-scope-input").click(function(){ 
@@ -73,14 +72,20 @@ function bindCommunexionScopeEvents(){
 function activateGlobalCommunexion(active, firstLoad){  
 	mylog.log("activateGlobalCommunexion", active);
     $.cookie('communexionActivated', active, { expires: 365, path: "/" });
-    globalCommunexion=active;
+    communexion.state=active;
     if(active){
         headerHtml='<i class="fa fa-university"></i> ' + communexion.currentName + "<small class='text-dark'>.CO</small>"
         //setGlobalScope($.cookie('communexionValue'), communexion.currentName, $.cookie('communexionType'), $.cookie('communexionLevel'));
         $("#container-scope-filter").html(getBreadcrumCommunexion());
         if(actionOnSetGlobalScope=="save")
             $("#scopeListContainerForm").html(getBreadcrumCommunexion());
-        startSearch(0, indexStepInit,searchCallback);
+        //startSearch(0, indexStepInit,searchCallback);
+        if(actionOnSetGlobalScope=="filter"){
+            if(location.hash.indexOf("#live") >=0)
+                startNewsSearch(true);
+            else if(!firstLoad)
+                startSearch(0, indexStepInit,searchCallback);
+        }
         bindCommunexionScopeEvents();
     }else{
         headerHtml='<a href="#" class="menu-btn-back-category" data-target="#modalMainMenu" data-toggle="modal">'+

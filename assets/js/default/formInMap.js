@@ -263,7 +263,7 @@ var formInMap = {
 						mylog.log("city/save obj.city", obj.city);
 						mylog.log("city/save data", data);
 						if(data.result){
-							toastr.success("City create");
+							toastr.success(data.msg);
 						}
 
 						formInMap.NE_localityId = data.id
@@ -391,7 +391,7 @@ var formInMap = {
 					};
 				});
 
-				if(html == "") html = "<i class='fa fa-ban'></i> Aucun résultat";
+				if(html == "") html = "<i class='fa fa-ban'></i> "+trad.noresult;
 				$("#dropdown-newElement_"+currentScopeType+"-found").html(html);
 				$("#dropdown-newElement_"+currentScopeType+"-found").show();
 
@@ -497,7 +497,7 @@ var formInMap = {
 
 		formInMap.NE_street = $('[name="newElement_street"]').val();
 
-		$("#dropdown-newElement_streetAddress-found").html("<li><a href='javascript:'><i class='fa fa-spin fa-refresh'></i> recherche en cours</a></li>");
+		$("#dropdown-newElement_streetAddress-found").html("<li><a href='javascript:'><i class='fa fa-spin fa-refresh'></i> "+trad.currentlyresearching+"</a></li>");
 		$("#dropdown-newElement_streetAddress-found").show();
 		mylog.log("countryCode", countryCode);
 		
@@ -564,26 +564,7 @@ var formInMap = {
 			showMap(false);
 			if(typeof contextData.map != "undefined" && contextData.map != null)
 				Sig.showMapElements(Sig.map, contextData.map.data, contextData.map.icon, contextData.map.title);
-		}	
-			// }else{
-			// 	mylog.log("backToForm 4");
-			// 	if(notEmpty($("[name='newPC_lat']").val())){
-			// 		postalCodeObj = {
-			// 			postalCode : $("[name='newPC_postalCode']").val(),
-			// 			name : $("[name='newPC_name']").val(),
-			// 			latitude : $("[name='newPC_lat']").val(),
-			// 			longitude : $("[name='newPC_lon']").val()
-			// 		};
-			// 		mylog.log("forminmap copyMapForm2Dynform 2");
-			// 		dyFInputs.locationObj.copyMapForm2Dynform(postalCodeObj);
-			// 		dyFInputs.locationObj.addLocationToForm(postalCodeObj);
-			// 	}
-			// 	showMap(false);
-			// 	Sig.clearMap();
-			// 	if(location.hash != "#referencement" && location.hash != "#web")
-			// 		$('#ajax-modal').modal("show");
-			// }
-		//}
+		}
 		
 	},
 
@@ -616,14 +597,18 @@ var formInMap = {
 						if(typeof contextData.address == "undefined" || contextData.address == null){
 							inMap =false ;
 						}
-						contextData.address = data.locality.address;
-						contextData.geo = data.locality.geo;
-						contextData.geoPosition = data.locality.geoPosition;
+
+						if(notEmpty(data.locality)){
+							contextData.address = data.locality.address;
+							contextData.geo = data.locality.geo;
+							contextData.geoPosition = data.locality.geoPosition;
+						}
+						
 						
 						formInMap.hiddenHtmlMap(false);
 						formInMap.initData();
 
-						if(!formInMap.addressesIndex){							
+						if(!formInMap.addressesIndex){
 							if(contextData.id != userId){
 								var typeMap = ((typeof contextData == "undefined" || contextData == null) ? "citoyens" : contextData.type) ;
 								if(typeMap == "citoyens")
@@ -637,7 +622,7 @@ var formInMap = {
 								currentUser.postalCode = locality.address.postalCode;
 								currentUser.codeInsee = locality.address.codeInsee;
 								currentUser.keyLocality = locality.address.key;
-								//formInMap.setCommunexion(locality.address);
+								setCookies();
 								if(typeof Sig.myPosition != "undefined"){
 									Sig.myPosition.position.latitude = locality.geo.latitude;
 									Sig.myPosition.position.longitude = locality.geo.longitude;
@@ -917,6 +902,7 @@ var formInMap = {
 
 	displayGeoShape : function(){
 		mylog.log("displayGeoShape");
+		if(typeof formInMap.geoShape == "undefined") return;
 		var geoShape = Sig.inversePolygon(formInMap.geoShape.coordinates[0]);
 		Sig.showPolygon(geoShape);
 		setTimeout(function(){
@@ -934,7 +920,7 @@ var formInMap = {
 		if(typeof keepType =="undefined" || keepType==false){
 			formInMap.formType = "";
 		}
-		formInMap.updateLocality = false;
+		//formInMap.updateLocality = false;
 		formInMap.addressesIndex = false;
 		formInMap.initDropdown();
 		formInMap.saveCities = {} ;
