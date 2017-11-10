@@ -108,7 +108,7 @@
 				<?php //if( Badge::checkBadgeInListBadges("opendata", $element["badges"]) ){?>
 					<div class="badgePH pull-left" data-title="OPENDATA">
 						<span class="pull-left tooltips" data-toggle="tooltip" data-placement="left" 
-							  title="Les données sont ouvertes." style="font-size: 13px; line-height: 30px;">
+							  title="<?php echo Yii::t("common","Keep data open and usable by all") ?>" style="font-size: 13px; line-height: 30px;">
 							<span class="fa-stack opendata" style="width:17px">
 								<i class="fa fa-database main fa-stack-1x" style="font-size: 20px;"></i>
 								<i class="fa fa-share-alt  mainTop fa-stack-1x text-white" 
@@ -124,7 +124,7 @@
 				<div class="badgePH pull-left margin-left-15" data-title="OPENEDITION">
 					<a href="javascript:;" class="btn-show-activity">
 					<span class="pull-right tooltips" data-toggle="tooltip" data-placement="left" 
-							title="Tous les utilisateurs ont la possibilité de participer / modifier les informations." 
+							title="<?php echo Yii::t("common","All users can participate and modify informations") ?>" 
 							style="font-size: 13px; line-height: 30px;">
 						<i class="fa fa-creative-commons" style="font-size: 17px;"></i> 
 						<?php echo Yii::t("common","Open edition") ?>
@@ -141,7 +141,7 @@
     	
     	<div class="col-xs-12 col-sm-9 col-md-9 col-lg-10 text-white pull-right">
 			<?php if (@$element["status"] == "deletePending") { ?> 
-				<h4 class="text-left padding-left-15 pull-left no-margin letter-red">En cours de suppression</h4><br>
+				<h4 class="text-left padding-left-15 pull-left no-margin letter-red"><?php echo Yii::t("common","Being suppressed") ?></h4><br>
 			<?php } ?>
 			<h4 class="text-left padding-left-15 pull-left no-margin">
 				<span id="nameHeader">
