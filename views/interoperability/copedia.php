@@ -24,10 +24,6 @@ $this->renderPartial($layoutPath.'header',
         "page" => "interoperability") );
 ?>
 
-<div id="container-scope-filter"  class="col-md-10 col-sm-10 col-xs-12 padding-5">
-  <?php $this->renderPartial($layoutPath.'breadcrum_communexion', array("type"=>@$type)); ?>
-</div>
-
 <style>
 
 #all_wikilinks {
@@ -459,6 +455,28 @@ circle.yellow-dot {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.6.7/d3-tip.min.js"></script>
 
 <!-- <center><h3>Copédia : vue d'essemble de la page Wiki de : <a id="wiki_title" target="_blank"></a></h3></center> -->
+
+<div class="input-group col-md-6 col-md-offset-3" id="main-input-group" style="margin-bottom:15px;">
+  <input class="form-control" id="main-search-bar" placeholder="Rechercher le Copédia pour un élément possédant possédant une page Wikipédia" type="text">
+  <span class="input-group-addon bg-white" id="main-search-bar-addon">
+    <i class="fa fa-search"></i>
+  </span>
+</div>
+
+<div style='text-align:center; margin-bottom: 50px;'>
+  <button class="btn btn-default" id="main-btn-start-search-interop">
+    <i class="fa fa-search"></i> Lancer le Copédia
+  </button>
+</div>
+
+<div id="container-scope-filter"  class="col-md-10 col-sm-10 col-xs-12 padding-5">
+  <?php $this->renderPartial($layoutPath.'breadcrum_communexion', array("type"=>@$type)); ?>
+</div>
+
+<center><button class="btn btn-default list_all_wikipedia_article" style="margin: 20px;">
+  Lancer le Copédia de la page Wikipédia du scope
+</button></center>
+
 <br/>
 
 <div id="main-container-copedia" class="col-xs-12 bg-white">
@@ -536,15 +554,9 @@ circle.yellow-dot {
 
 		<center>
 
-		<button class="btn btn-default list_all_wikidata_item" style="margin: 20px;">
+		<!-- <button class="btn btn-default list_all_wikidata_item" style="margin: 20px;">
 			List all Wikidata elements of the city
-		</button>
-
-		<button class="btn btn-default list_all_wikipedia_article" style="margin: 20px;">
-			All wikipédia links in the Wiki page of the city
-		</button>
-
-		<br>
+		</button> -->
 
 		<h4 id="wiki_title"></h4>
 		<div id="chart"></div>
@@ -578,10 +590,10 @@ circle.yellow-dot {
 
 	$("#chart").hide();
 
-    $(".list_all_wikidata_item").click(function(){
-    	wikidataID = getWikidataID();
-    	initVarAndFunction();
-    	listAllWikidataItems(wikidataID);    	
+  $(".list_all_wikidata_item").click(function(){
+  	wikidataID = getWikidataID();
+  	initVarAndFunction();
+  	listAllWikidataItems(wikidataID);    	
 	});
 
 	$(".list_all_wikipedia_article").click(function() {
@@ -589,6 +601,20 @@ circle.yellow-dot {
 		initVarAndFunction();
 		listAllWikipediaArticle(wikidataID);
 	});
+
+  $("#main-btn-start-search-interop").off('submit').click(function() {
+    mylog.log('On appuie sur le lien Copédia RANDOM');
+
+    initVarAndFunction();
+
+    $("#wiki_title").append(
+      "<a target='_blank' href='https://fr.wikipedia.org/wiki/"+$("#main-search-bar").val()+"'>"+$("#main-search-bar").val()+"</a>"
+    );
+
+    getAllWikipediaArticleForCopedia($("#main-search-bar").val());
+    KScrollTo("#all_wikipedia_item");
+    
+  });
 
 	function initVarAndFunction() {
 		nb_person = 0;
@@ -615,7 +641,7 @@ circle.yellow-dot {
 			}]
 		}];
 
-		$("#wiki_title").html("Vue d'enssemble de la page Wikipédia : ");
+		$("#wiki_title").html("Vue d'ensemble de la page Wikipédia : ");
 
 	}
 
@@ -715,27 +741,6 @@ circle.yellow-dot {
 
     return city_wikidataID;
 	}
-		
- //  function getCityDataByInsee(insee) {
-
- //    $.ajax({
- //      type: "GET",
- //      url: baseUrl + "/co2/interoperability/get/insee/"+insee,
- //      async: false,
- //      success: function(data){ 
- //        mylog.log("succes get CityDataByInsee", data); //mylog.dir(data);
- //        if ((Object.keys(data).length) <= 1) {
- //          $.each(data, function(index, value) {
- //            city_data = value;
- //          });
- //        }
- //        else {
- //          city_data = data;
- //        }
- //      }
- //    });
- //    return city_data;
-	// }
 
 	function OpenDynFormForPutDescriptionOnWikidataElt(wikidataID, itemLabel) {
 
@@ -1057,11 +1062,12 @@ circle.yellow-dot {
 			mylog.log(final_all_wikilinks);
 			$('#all_wikipedia_item').html('');
 			$.each(final_all_wikilinks, function(index, value) {
-				mylog.log('LELEMENT EST : ', index);
+				// mylog.log('LELEMENT EST : ', index);
 				if (typeof value.typeLabel[0].time !== "undefined" || typeof value.typeLabel[0].starttime !== "undefined") {
 					mylog.log('EVENT TROUVE !!!!!!!!');
+          mylog.log(value);
 					elt_find = true;
-					if (value.typeLabel[0].typeLabel !== "undefined") {
+					if (typeof value.typeLabel[0].typeLabel !== "undefined") {
 						var elt_label_dbpedia_clean = index.replace(/_/g, " ");
 
 						$("#all_wikipedia_item").append(
@@ -1247,7 +1253,6 @@ circle.yellow-dot {
 	function getAllWikipediaArticleForCopedia(label_dbpedia) {
 
 		if (typeof label_dbpedia == "number") {
-			mylog.log('CECI EST UNE DATE');
 			label_dbpedia = label_dbpedia.toString();
 		}
 
@@ -1259,22 +1264,28 @@ circle.yellow-dot {
 
 		query_url = 'http://fr.dbpedia.org/sparql?default-graph-uri=&query=+++prefix+dbo%3A+%3Chttp%3A%2F%2Fdbpedia.org%2Fontology%2F%3E%0D%0Aprefix+dbr%3A+%3Chttp%3A%2F%2Ffr.dbpedia.org%2Fresource%2F%3E%0D%0APREFIX+wikidb%3A+%3Chttp%3A%2F%2Fwikidata.dbpedia.org%2Fresource%2F%3E%0D%0APREFIX+dbp%3A+%3Chttp%3A%2F%2Ffr.dbpedia.org%2Fproperty%2F%3E%0D%0Aprefix+wiki-fr%3A+%3Chttp%3A%2F%2Ffr.wikipedia.org%2Fwiki%2F%3E%0D%0A%0D%0A+SELECT+DISTINCT+*+where+%7B%0D%0A%0D%0A++%3Fitem+rdfs%3Alabel+%22'+label_dbpedia+'%22%40fr+.%0D%0A++%3Fitem+dbo%3AwikiPageWikiLink+%3Fwikipage.%0D%0A++%3Fwikipage+dbo%3Aabstract+%3Fdescription.%0D%0A++%3Fwikipage+foaf%3AisPrimaryTopicOf+%3Fpagewiki.%0D%0A++%3Fwikipage+rdfs%3Alabel+%3FpagewikiLabel+.%0D%0A++OPTIONAL+%7B%3Fwikipage+rdfs%3Acomment+%3FshortDescription%7D.%0D%0A++OPTIONAL+%7B%3Fwikipage+dbp%3Alatitude+%3Flatitude%7D.%0D%0A++OPTIONAL+%7B%3Fwikipage+dbp%3Alongitude+%3Flongitude%7D.%0D%0A++OPTIONAL+%7B%3Fwikipage+dbo%3AbirthDate+%3FbirthDate%7D.%0D%0A++OPTIONAL+%7B%3Fwikipage+dbo%3AfoundedBy+%3FfoundedBy%7D.%0D%0A++OPTIONAL+%7B%3Fwikipage+dbo%3AcreationYear+%3FcreationYear%7D.%0D%0A++OPTIONAL+%7B%3Fwikipage+dbp%3AsiteWeb+%3FsiteWeb%7D+.%0D%0A%0D%0A++FILTER%28lang%28%3Fdescription%29%3D%22fr%22%29.+%0D%0A++FILTER%28lang%28%3FpagewikiLabel%29%3D%22fr%22%29.%0D%0A++FILTER%28lang%28%3FshortDescription%29%3D%22fr%22%29.%0D%0A%0D%0A%7D&format=application%2Fsparql-results%2Bjson&timeout=0&debug=on';
 
-		mylog.log("QUERY URL : ", query_url);
-
 		$.ajax({
       url:query_url,
       type:"GET",
       dataType: "json",
       success:function(data) {
       	mylog.log('ALL HYPERTEXT LINKS IN PAGE : ', data);
-      	all_wikilinks = data;
-      	displayAllWikipediaArticle(all_wikilinks.results.bindings);
+
+        if (data.results.bindings.length !== 0) {
+          all_wikilinks = data;
+          displayAllWikipediaArticle(all_wikilinks.results.bindings);
+        } else {
+          $("#wiki_title").html(" ");
+          $("#chart").hide();
+          $("#all_wikipedia_item").html("<center><div class='search-loaderr text-dark' style='font-size:20px;'>Nous n'avons pas trouvé de page Wiki correspondant, vérifiez l'ortographe</div></center>");
+        }
+      	
       },
       error:function(data) {
       	mylog.log('ERREUR DANS L\'OPTENTION DES HYPERTEXT');
       	$("#all_wikipedia_item").html('<h2>Erreur dans la récupération des liens de la page Wikipédia</h2>');
       }
-  });	
+    });	
 	}
 
 	function displayAllWikipediaArticle(all_wikilinks) {
@@ -1326,8 +1337,6 @@ circle.yellow-dot {
 	function displayChronoLine(label_dbpedia) {
 
 		$(".n").remove();
-
-		mylog.log('ON ENTRE DANS LA FONCTION CHRONOLINE' , label_dbpedia);
 
 		$("#chart").show();
 

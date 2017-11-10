@@ -1,13 +1,10 @@
 <?php
-
 	$cs = Yii::app()->getClientScript();
-
 ?>
 
 <div><h2>Clean-up des tags de Communecter </h2></div>
 
 <?php
-
 	$m = new MongoClient();
     $db = $m->pixelhumain;
     $collections = $db->getCollectionNames();

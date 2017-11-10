@@ -41,7 +41,7 @@ $this->renderPartial($layoutPath.'header',
     #page .bg-yellow{
         background-color:#FFC600 !important;
         color:white!important;
-    }N
+    }
     #page .bg-turq{
         background-color: #229296 !important;
         color:white!important;
@@ -196,7 +196,7 @@ $this->renderPartial($layoutPath.'header',
 </style>
 
 <div class="input-group col-md-6 col-md-offset-3" id="main-input-group" style="margin-bottom:15px;">
-    <input class="form-control" id="main-search-bar" placeholder="<?php echo Yii::t("common", "Search a page ...");?>" type="text">
+    <input class="form-control" id="main-search-bar" placeholder="Rechercher un élement" type="text">
     <span class="input-group-addon bg-white" id="main-search-bar-addon">
         <i class="fa fa-search"></i>
     </span>
@@ -442,94 +442,100 @@ $this->renderPartial($layoutPath.'header',
 
         city_data = getCityDataById(city_id, type_zone);
 
-        var geoShape = getGeoShapeForOsm(city_data.geoShape);
-        var geofilter = getGeofilterPolygon(city_data.geoShape);
-        var city_wikidataID = city_data.wikidataID;
-        var city_insee = city_data.insee;
+        if (typeof(city_data.geoShape == "undefined")) {
+            $("#dropdown_search").html("<center><span class='search-loaderr text-dark' style='font-size:20px;'></i> Désolé nous n'avons pas le geoShape de cette ville ...</span></center>");
 
-        if (searchTags !== "") {
-        	var libelle_activity = getLibelleActivity();
-            var amenity_filter = getAmenityFilter();
-            var rome_letters = getRomeActivityCodeFromThematic(searchTags);
+            return "GeoShape Manquante";
         } else {
-        	var libelle_activity = null;
-            var amenity_filter = null;
-            var rome_letters = null;
+
+            var geoShape = getGeoShapeForOsm(city_data.geoShape);
+            var geofilter = getGeofilterPolygon(city_data.geoShape);
+            var city_wikidataID = city_data.wikidataID;
+            var city_insee = city_data.insee;
+
+            if (searchTags !== "") {
+                var libelle_activity = getLibelleActivity();
+                var amenity_filter = getAmenityFilter();
+                var rome_letters = getRomeActivityCodeFromThematic(searchTags);
+            } else {
+                var libelle_activity = null;
+                var amenity_filter = null;
+                var rome_letters = null;
+            }
+
+            if (typeD !== "undefined") {
+                if (typeD == "wikidata") {
+                    url_interop = getUrlInteropForWiki(city_wikidataID);
+                } else if (typeD == "datagouv") {
+                    url_interop = getUrlInteropForDatagouv(city_insee);
+                } else if (typeD == "osm") {
+                    url_interop = getUrlInteropForOsm(geoShape, amenity_filter);
+                } else if (typeD == "ods") {
+                    url_interop  = getUrlInteropForOds(geofilter, libelle_activity);
+                } else if (typeD == "datanova") {
+                    url_interop = getUrlInteropForDatanova(geofilter);
+                } else if (typeD == "pole_emploi") {
+                    url_interop = getUrlInteropForPoleEmploi(city_insee, rome_letters);
+                } else if (typeD == "membres_univ") {
+                    url_interop = getUrlInteropForEducMembre(geofilter);
+                } else if (typeD == "etab_recherche") {
+                    url_interop = getUrlInteropForEducEtab(geofilter);
+                } else if (typeD == "eco_doct") {
+                    url_interop = getUrlInteropForEducEcole(geofilter);
+                } else if (typeD == "struct_recherche") {
+                    url_interop = getUrlInteropForEducStruct(geofilter);
+                }
+
+                else if (typeD == "all_interop") {
+                    all_interop_url = [];
+                    if (searchTags == "") {
+                        url_interop = getUrlInteropForWiki(city_wikidataID);
+                        all_interop_url.push(url_interop);
+
+                        url_interop = getUrlInteropForDatagouv(city_insee);
+                        all_interop_url.push(url_interop);
+
+                        url_interop = getUrlInteropForOsm(geoShape, amenity_filter);
+                        all_interop_url.push(url_interop);
+
+                        url_interop  = getUrlInteropForOds(geofilter, libelle_activity);
+                        all_interop_url.push(url_interop);
+
+                        url_interop = getUrlInteropForDatanova(geofilter);
+                        all_interop_url.push(url_interop);
+      
+                        url_interop = getUrlInteropForEducMembre(geofilter);
+                        all_interop_url.push(url_interop);
+
+                        url_interop = getUrlInteropForEducEtab(geofilter);
+                        all_interop_url.push(url_interop);
+
+                        url_interop = getUrlInteropForEducEcole(geofilter);
+                        all_interop_url.push(url_interop);
+
+                        url_interop = getUrlInteropForEducStruct(geofilter);
+                        all_interop_url.push(url_interop);
+
+                        if (text_search_name == "") {
+                            url_interop = getUrlInteropForPoleEmploi(city_insee, rome_letters);
+                            all_interop_url.push(url_interop);     
+                        }
+                    } else {
+                        url_interop = getUrlInteropForOsm(geoShape, amenity_filter);
+                        all_interop_url.push(url_interop);
+
+                        url_interop  = getUrlInteropForOds(geofilter, libelle_activity);
+                        all_interop_url.push(url_interop);
+
+                        if (text_search_name == "") {
+                            url_interop = getUrlInteropForPoleEmploi(city_insee, rome_letters);
+                            all_interop_url.push(url_interop);     
+                        }
+                    }                
+                }
+            }
+            return url_interop;
         }
-
-        if (typeD !== "undefined") {
-	        if (typeD == "wikidata") {
-	            url_interop = getUrlInteropForWiki(city_wikidataID);
-	        } else if (typeD == "datagouv") {
-	            url_interop = getUrlInteropForDatagouv(city_insee);
-	        } else if (typeD == "osm") {
-	            url_interop = getUrlInteropForOsm(geoShape, amenity_filter);
-	        } else if (typeD == "ods") {
-	            url_interop  = getUrlInteropForOds(geofilter, libelle_activity);
-	        } else if (typeD == "datanova") {
-	            url_interop = getUrlInteropForDatanova(geofilter);
-	        } else if (typeD == "pole_emploi") {
-	            url_interop = getUrlInteropForPoleEmploi(city_insee, rome_letters);
-	        } else if (typeD == "membres_univ") {
-	        	url_interop = getUrlInteropForEducMembre(geofilter);
-	        } else if (typeD == "etab_recherche") {
-	        	url_interop = getUrlInteropForEducEtab(geofilter);
-	        } else if (typeD == "eco_doct") {
-	        	url_interop = getUrlInteropForEducEcole(geofilter);
-	        } else if (typeD == "struct_recherche") {
-	        	url_interop = getUrlInteropForEducStruct(geofilter);
-	        }
-
-	        else if (typeD == "all_interop") {
-	            all_interop_url = [];
-	            if (searchTags == "") {
-	            	url_interop = getUrlInteropForWiki(city_wikidataID);
-		            all_interop_url.push(url_interop);
-
-		            url_interop = getUrlInteropForDatagouv(city_insee);
-		            all_interop_url.push(url_interop);
-
-		            url_interop = getUrlInteropForOsm(geoShape, amenity_filter);
-		            all_interop_url.push(url_interop);
-
-		            url_interop  = getUrlInteropForOds(geofilter, libelle_activity);
-		            all_interop_url.push(url_interop);
-
-		            url_interop = getUrlInteropForDatanova(geofilter);
-		            all_interop_url.push(url_interop);
-  
-		            url_interop = getUrlInteropForEducMembre(geofilter);
-					all_interop_url.push(url_interop);
-
-					url_interop = getUrlInteropForEducEtab(geofilter);
-					all_interop_url.push(url_interop);
-
-					url_interop = getUrlInteropForEducEcole(geofilter);
-					all_interop_url.push(url_interop);
-
-					url_interop = getUrlInteropForEducStruct(geofilter);
-					all_interop_url.push(url_interop);
-
-		            if (text_search_name == "") {
-			            url_interop = getUrlInteropForPoleEmploi(city_insee, rome_letters);
-			            all_interop_url.push(url_interop);     
-		            }
-	            } else {
-	            	url_interop = getUrlInteropForOsm(geoShape, amenity_filter);
-		            all_interop_url.push(url_interop);
-
-		            url_interop  = getUrlInteropForOds(geofilter, libelle_activity);
-		            all_interop_url.push(url_interop);
-
-	 				if (text_search_name == "") {
-			            url_interop = getUrlInteropForPoleEmploi(city_insee, rome_letters);
-			            all_interop_url.push(url_interop);     
-		            }
-	            }                
-	        }
-        }
-
-        return url_interop;
     }
 
     function startSearchInterop(indexMin, indexMax) {
@@ -603,8 +609,7 @@ $this->renderPartial($layoutPath.'header',
 	        error: function (data){
 	            mylog.log("error autocomplete INTEROP search"); mylog.dir(data);     
 	            //signal que le chargement est terminé
-	            loadingData = false;  
-                // $('#dropdown_search').append("<br/><div><h1>Something went wrong during this research ... </h1></div>");   
+	            loadingData = false;
                 $("#dropdown_search").html("<center><span class='search-loaderr text-dark' style='font-size:20px;'></i> Something went wrong during this research ...</span></center>");
 	        },
 	        success: function(data){ mylog.log("success autocomplete INTEROP search", data); 
